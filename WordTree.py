@@ -23,7 +23,7 @@ class WordNode(object):
 
     def add(self, value):
         temp = self.find(value)
-        if temp is None:
+        if not temp:
             temp = WordNode(value)
             self.next.append(temp)
         return temp
@@ -44,9 +44,9 @@ class WordTree(object):
         length = len(word)
         parrent = None
         for i, ch in enumerate(word):
-            if parrent is None:
+            if not parrent:
                 parrent = self.find(ch)
-                if parrent is None:
+                if not parrent:
                     parrent = WordNode(ch)
                     self.wordTree.append(parrent)
             else:
