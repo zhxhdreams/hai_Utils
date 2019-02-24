@@ -11,7 +11,7 @@ import time
 
 import urllib3
 
-import Utils.Util as Util
+import hai_Utils.Util as Util
 
 tlist = []
 
@@ -25,7 +25,7 @@ class DownloadInfo():
 
 
 class ProxyInfo():
-    proxyURL = ''
+    proxyURL = 'http://127.0.0.1:80'
 
 
 class DownloadUtil():
@@ -44,6 +44,7 @@ class DownloadUtil():
     useProxysHostList = []
     poolProxy = None
     pool = None
+    queueDownloadFinishCallBack = None
 
     class _DownloadThread(threading.Thread):
         def run(self):
@@ -86,6 +87,8 @@ class DownloadUtil():
                             response = pool.request('GET', item.link)
                         with open(filePath, 'wb') as f:
                             f.write(response.data)
+                        if outer.queueDownloadFinishCallBack:
+                            outer.queueDownloadFinishCallBack(item)
                     except Exception as e:
                         if os.path.exists(filePath):
                             os.remove(filePath)
@@ -112,6 +115,10 @@ class DownloadUtil():
 
     def setProxyURL(self, proxyURL):
         self.proxyInfo.proxyURL = proxyURL
+        return self
+
+    def setQueueDownloadFinishCallBack(self, callback):
+        self.queueDownloadFinishCallBack = callback
         return self
 
     def addDownloadTask(self, url, fileDir=None, fileName=None, description=None):
@@ -204,6 +211,13 @@ class DownloadUtil():
     def clearUseProxysHost(self):
         self.useProxysHostList = []
 
+    def _startQueueThreads(self):
+        for i in range(self.threadNum):
+            t = self._DownloadThread(name='download-thread-' + str(i), args=(self,))
+            t.start()
+            # t._stop()
+            self.threadDownloadList.append(t)
+
     def buildQueue(self):
         self.destory()
         self.threadDownloadList.clear()
@@ -216,12 +230,7 @@ class DownloadUtil():
         if not os.path.exists(self.defaultDownloadDir):
             os.mkdir(self.defaultDownloadDir)
         print('defaultDownloadDir is {}\n'.format(self.defaultDownloadDir))
-
-        for i in range(self.threadNum):
-            t = self._DownloadThread(name='download-thread-' + str(i), args=(self,))
-            t.start()
-            t._stop()
-            self.threadDownloadList.append(t)
+        self._startQueueThreads()
         return self
 
     def build(self):
@@ -258,3 +267,6 @@ class DownloadUtil():
             if isOver:
                 break
             time.sleep(2)
+
+    def waitForFinish(self):
+        return
