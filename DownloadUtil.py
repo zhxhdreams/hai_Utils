@@ -8,11 +8,12 @@ import re
 import sys
 import threading
 import time
-
+import logging
 import urllib3
 
 import hai_Utils.Util as Util
 
+logger = logging.getLogger()
 tlist = []
 
 
@@ -25,15 +26,16 @@ class DownloadInfo():
 
 
 class ProxyInfo():
-    proxyURL = 'http://127.0.0.1:80'
+    proxyURL = ''
 
 
 class DownloadUtil():
+    lock = threading.Lock()
     poolNum = 10
     timeOut = 10
     retries = 3
     headers = {}
-    threadNum = 1
+    threadNum = 2
     threadDownloadList = []
     # 下载队列
     queueDownload = queue.Queue()
@@ -63,12 +65,18 @@ class DownloadUtil():
             elif isinstance(outer.retries, urllib3.Retry):
                 retries = outer.timeOut
             pool = urllib3.PoolManager(num_pools=outer.poolNum, headers=outer.headers, timeout=timeout, retries=retries)
-            poolProxy = urllib3.ProxyManager(proxy_url=proxyInfo.proxyURL, num_pools=outer.poolNum, headers=outer.headers, timeout=timeout, retries=retries)
+            if outer.proxyInfo.proxyURL:
+                poolProxy = urllib3.ProxyManager(proxy_url=proxyInfo.proxyURL, num_pools=outer.poolNum, headers=outer.headers, timeout=timeout, retries=retries)
+            else:
+                poolProxy = None
             while True:
                 if outer.isDestory:
                     break
                 if not outer.queueDownload.empty():
+                    outer.lock.acquire()
                     item = outer.queueDownload.get()
+                    outer.queueDownload.task_done()
+                    outer.lock.release()
                     if item.fileName:
                         fileName = re.sub(pattern, '-', item.fileName)
                     else:
@@ -82,7 +90,11 @@ class DownloadUtil():
                     try:
                         response = None
                         if item.useProxy:
-                            response = poolProxy.request('GET', item.link)
+                            if poolProxy:
+                                response = poolProxy.request('GET', item.link)
+                            else:
+                                logger.warning('未设置代理信息，不能使用代理下载!')
+                                continue
                         else:
                             response = pool.request('GET', item.link)
                         with open(filePath, 'wb') as f:
@@ -92,6 +104,8 @@ class DownloadUtil():
                     except Exception as e:
                         if os.path.exists(filePath):
                             os.remove(filePath)
+                        logger.warning(str(e))
+                        continue
 
     def setPoolNum(self, poolNum):
         self.poolNum = poolNum
@@ -157,7 +171,10 @@ class DownloadUtil():
             try:
                 response = None
                 if _useProxy:
-                    response = self.poolProxy.request('GET', url)
+                    if self.poolProxy:
+                        response = self.poolProxy.request('GET', url)
+                    else:
+                        raise Exception('未设置代理信息，不能使用代理下载!')
                 else:
                     response = self.pool.request('GET', url)
                 with open(filePath, 'wb') as f:
@@ -253,7 +270,10 @@ class DownloadUtil():
         elif isinstance(self.retries, urllib3.Retry):
             retries = self.timeOut
         self.pool = urllib3.PoolManager(num_pools=self.poolNum, headers=self.headers, timeout=timeout, retries=retries)
-        self.poolProxy = urllib3.ProxyManager(proxy_url=self.proxyInfo.proxyURL, num_pools=self.poolNum, headers=self.headers, timeout=timeout, retries=retries)
+        if self.proxyInfo.proxyURL:
+            self.poolProxy = urllib3.ProxyManager(proxy_url=self.proxyInfo.proxyURL, num_pools=self.poolNum, headers=self.headers, timeout=timeout, retries=retries)
+        else:
+            self.poolProxy = None
         return self
 
     def destory(self):
@@ -269,4 +289,5 @@ class DownloadUtil():
             time.sleep(2)
 
     def waitForFinish(self):
-        return
+        self.queueDownload.join()
+        self.destory()
