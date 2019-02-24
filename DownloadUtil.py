@@ -72,7 +72,9 @@ class DownloadUtil():
             while True:
                 if outer.isDestory:
                     break
-                if not outer.queueDownload.empty():
+                if outer.queueDownload.empty():
+                    time.sleep(5)
+                else:
                     outer.lock.acquire()
                     item = outer.queueDownload.get()
                     outer.queueDownload.task_done()
