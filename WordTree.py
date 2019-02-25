@@ -91,7 +91,6 @@ class WordTree(object):
 
     # 添加单词到树中
     def addWord(self, word, wtype):
-        length = len(word)
         parrent = None
         for i, ch in enumerate(word):
             if not parrent:
@@ -102,10 +101,10 @@ class WordTree(object):
             else:
                 # 不用判断是否已存在，addValue函数里有判断
                 parrent = parrent.addValue(ch)
-            if i == (length - 1):
-                parrent.setIsWord(True)
-                # 不用判断是否已存在，addType函数里有判断
-                parrent.addType(wtype)
+        if parrent:
+            parrent.setIsWord(True)
+            # 不用判断是否已存在，addType函数里有判断
+            parrent.addType(wtype)
 
     # 获取所有节点数量
     def getNodeCount(self):

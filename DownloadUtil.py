@@ -280,8 +280,8 @@ class DownloadUtil():
 
     def destory(self):
         self.isDestory = True
-        isOver = True
         while True:
+            isOver = True
             for t in self.threadDownloadList:
                 if t.is_alive():
                     isOver = False
