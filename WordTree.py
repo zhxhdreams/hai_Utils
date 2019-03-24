@@ -8,6 +8,7 @@ __author__ = 'hai'
 
 
 class WordNode(object):
+    # __slots__ = ('__value', '__next', '__isWord', '__type',)
 
     def __init__(self, value):
         # 当前字符值
@@ -61,6 +62,7 @@ class WordNode(object):
 
 
 class WordTree(object):
+    # __slots__ = ('wordTree',)
 
     def __init__(self):
         self.wordTree = []
