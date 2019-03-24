@@ -8,7 +8,7 @@ __author__ = 'hai'
 
 
 class WordNode(object):
-    # __slots__ = ('__value', '__next', '__isWord', '__type',)
+    __slots__ = ('__value', '__next', '__isWord', '__type', )
 
     def __init__(self, value):
         # 当前字符值
@@ -62,7 +62,7 @@ class WordNode(object):
 
 
 class WordTree(object):
-    # __slots__ = ('wordTree',)
+    __slots__ = ('wordTree', )
 
     def __init__(self):
         self.wordTree = []
@@ -119,20 +119,31 @@ class WordTree(object):
     def getWordCount(self):
         count = 0
         for item in self.wordTree:
-            if item.getIsWord():
-                count += 1
-            count = count + self.__getNodeCount(item, isWordFilter=True)
+            count = count + self.__getWordCount(item)
         return count
 
-    def __getNodeCount(self, node, isWordFilter=False):
+    def __getNodeCount_old(self, node, isWordFilter=False):
         count = 0
-        if isWordFilter:
-            if node.getIsWord():
-                count += 1
-        else:
+        if not isWordFilter:
             count = len(node.getNext())
         for item in node.getNext():
+            if isWordFilter and item.getIsWord():
+                count += 1
             count = count + self.__getNodeCount(item, isWordFilter)
+        return count
+
+    def __getNodeCount(self, node):
+        count = len(node.getNext())
+        for item in node.getNext():
+            count += self.__getNodeCount(item)
+        return count
+
+    def __getWordCount(self, node):
+        count = 0
+        if node.getIsWord():
+            count += 1
+        for item in node.getNext():
+            count += self.__getWordCount(item)
         return count
 
 
