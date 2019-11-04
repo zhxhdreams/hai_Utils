@@ -37,6 +37,7 @@ class DownloadUtil():
     headers = {}
     threadNum = 2
     threadDownloadList = []
+    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     # 下载队列
     queueDownload = queue.Queue()
     isDestory = False
