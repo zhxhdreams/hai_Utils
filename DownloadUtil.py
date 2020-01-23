@@ -23,6 +23,7 @@ class DownloadInfo():
     fileName = None
     description = ''
     useProxy = False
+    headers = None
 
 
 class ProxyInfo():
@@ -92,14 +93,19 @@ class DownloadUtil():
                     # logger.info('正在下载: ' + description)
                     try:
                         response = None
+                        _headers = None
+                        if item.headers:
+                             _headers = item.headers
+                        else:
+                            _headers = outer.headers
                         if item.useProxy:
                             if poolProxy:
-                                response = poolProxy.request('GET', item.link)
+                                response = poolProxy.request('GET', item.link, headers=_headers)
                             else:
                                 logger.warning('未设置代理信息，不能使用代理下载!')
                                 continue
                         else:
-                            response = pool.request('GET', item.link)
+                            response = pool.request('GET', item.link, headers=_headers)
                         with open(filePath, 'wb') as f:
                             f.write(response.data)
                         if outer.queueDownloadFinishCallBack:
@@ -138,7 +144,7 @@ class DownloadUtil():
         self.queueDownloadFinishCallBack = callback
         return self
 
-    def addDownloadTask(self, url, fileDir=None, fileName=None, description=None):
+    def addDownloadTask(self, url, fileDir=None, fileName=None, description=None, headers=None):
         host = Util.get_website_domain(url)
         if host in self.banList:
             return
@@ -147,11 +153,12 @@ class DownloadUtil():
         item.fileDir = fileDir
         item.fileName = fileName
         item.description = description
+        item.headers = headers
         if host in self.useProxysHostList:
             item.useProxy = True
         self.queueDownload.put(item)
 
-    def beginDownload(self, url, fileDir=None, fileName=None, description=None):
+    def beginDownload(self, url, fileDir=None, fileName=None, description=None, headers=None):
         try:
             host = Util.get_website_domain(url)
             if host in self.banList:
@@ -173,13 +180,18 @@ class DownloadUtil():
             # logger.info('正在下载: ' + description)
             try:
                 response = None
+                _headers = None
+                if headers:
+                    _headers = headers
+                else:
+                    _headers = self.headers
                 if _useProxy:
                     if self.poolProxy:
-                        response = self.poolProxy.request('GET', url)
+                        response = self.poolProxy.request('GET', url, headers=_headers)
                     else:
                         raise Exception('未设置代理信息，不能使用代理下载!')
                 else:
-                    response = self.pool.request('GET', url)
+                    response = self.pool.request('GET', url, headers=_headers)
                 with open(filePath, 'wb') as f:
                     f.write(response.data)
             except Exception as e:
