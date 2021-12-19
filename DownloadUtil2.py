@@ -110,7 +110,8 @@ class DownloadUtil2():
                         else:
                             response = client.get(item.link, headers=_headers)
                         with open(filePath, 'wb') as f:
-                            f.write(response.data)
+                            for data in response.iter_bytes():
+                                f.write(data)
                         if outer.queueDownloadFinishCallBack:
                             outer.queueDownloadFinishCallBack(item)
                     except Exception as e:
@@ -196,7 +197,8 @@ class DownloadUtil2():
                 else:
                     response = self.client.get(url, headers=_headers)
                 with open(filePath, 'wb') as f:
-                    f.write(response.data)
+                    for data in response.iter_bytes():
+                        f.write(data)
             except Exception as e:
                 if os.path.exists(filePath):
                     os.remove(filePath)
