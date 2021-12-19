@@ -3,6 +3,7 @@
 # @Date: 2019-02-13 17:49:00
 
 
+import hashlib
 from urllib.parse import urlparse
 
 
@@ -30,3 +31,13 @@ def get_website_domain(url):
                 break
         return result
     return ''
+
+
+def get_file_sha512(filepath):
+    _sha512 = None
+    with open(filepath, 'rb') as f:
+        sha512 = hashlib.sha512()
+        data = f.read()
+        sha512.update(data)
+        _sha512 = sha512.hexdigest()
+    return _sha512
